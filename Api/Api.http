@@ -4,3 +4,32 @@ GET {{Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+POST {{Api_HostAddress}}/account/admin/register
+Content-Type: application/json
+
+{
+  "dateOfBirth": "2025-02-12T05:44:43.584Z",
+  "phoneNumber": "string",
+  "password": "QUqkhxH8KYhVs@fJ",
+  "userName": "string",
+  "email": "string@gmail.com",
+  "firstName": "string",
+  "middleName": "string",
+  "lastName": "string",
+  "profileImageUrl": "string"
+}
+
+###
+POST {{Api_HostAddress}}/account/admin/login
+Content-Type: application/json
+
+{
+  "userName": "Rhoda.Towne",
+  "password": "sv+4Fn6+VK2GU5W!"
+}
+
+###
+
+###
+GET {{Api_HostAddress}}/account/admin/profile
+Authorization: Bearer eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoic3RyaW5nIiwiaWF0IjoiMTczOTM2MTMwNiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiMTgzN2ZlMDQtZjFmNS00ZmIyLThhOTAtM2RjMTlhZTA0MzIyIiwianRpIjoiMmMxYzQ2OTctYzU3YS00N2U3LWE2OTgtYWVjZTQ4MTE3OTczIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3MzkzNjE2MDYsImlzcyI6IlNjaG9vbEVkZ2VDQlRCYWNrZW5kQVBJIiwiYXVkIjoiU1BBQW5kTW9iaWxlQXBwIn0.7rMltY5ODXhkMfHC_cqderFbDnaJ9LszqaW4shMGXpY

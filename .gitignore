@@ -486,3 +486,6 @@ $RECYCLE.BIN/
 # Custom
 ClassLibrary1
 ConsoleApp1
+Api/app.db
+Api/app.db-shm
+Api/app.db-wal

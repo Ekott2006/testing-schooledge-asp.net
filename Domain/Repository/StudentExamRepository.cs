@@ -9,7 +9,7 @@ namespace Domain.Repository;
 public class StudentExamRepository(DataContext context)
 {
     // 🟢 Start Exam
-    public async Task<StudentExam?> StartExam(string userId, Guid examId)
+    public async Task<StudentExamResponse?> StartExam(string userId, Guid examId)
     {
         Exam? exam = await context.Exams.FirstOrDefaultAsync(x => x.Id == examId);
         Student? student = await context.Students.FirstOrDefaultAsync(x => x.UserId == userId);
@@ -46,7 +46,7 @@ public class StudentExamRepository(DataContext context)
         }
 
         await context.SaveChangesAsync();
-        return studentExam;
+        return new StudentExamResponse(studentExam);
     }
 
     // 🟢 Submit Answer (Ensuring it's within exam duration)
@@ -90,23 +90,26 @@ public class StudentExamRepository(DataContext context)
     }
 
     // 🟢 Get Student Exams
-    public async Task<List<StudentExam>> GetStudentExams(string userId)
+    public async Task<List<StudentExamResponse>> GetStudentExams(string userId)
     {
         return await context.StudentExams
             .Where(se => se.Student.UserId == userId)
             .Include(se => se.Exam)
+            .Include(se => se.Student)
+            .Select(x => new StudentExamResponse (x)) 
             .ToListAsync();
     }
 
     // 🟢 Get Student Exam Details
-    public async Task<StudentExam?> GetStudentExamById(string userId, Guid studentExamId)
+    public async Task<StudentExamResponse?> GetStudentExamById(string userId, Guid studentExamId)
     {
-        return await context.StudentExams
+        StudentExam? studentExam =  await context.StudentExams
             .Include(se => se.Exam)
             .Include(se => se.StudentAnswers)
             .ThenInclude(sa => sa.Question)
             .Where(se => se.Student.UserId == userId)
             .FirstOrDefaultAsync(se => se.Id == studentExamId);
+        return new StudentExamResponse(studentExam);
     }
 
     public async Task<bool> SubmitExam(string userId, Guid studentExamId)
@@ -146,10 +149,9 @@ public class StudentExamRepository(DataContext context)
     // ✅ Get Student Exam Results
     public async Task<StudentExamResultResponse?> GetExamResults(string userId, Guid studentExamId)
     {
-        return  await context.StudentExams
-            .Include(se => se.Exam).ThenInclude(exam => exam.Questions)
-            .Where(x => DateTime.UtcNow >= x.Exam.ReleaseDate && x.Status == StudentExamStatus.Completed && x.Student.UserId == userId)
+        return (await context.StudentExams
+                .Where(x => x.Status == StudentExamStatus.Completed && DateTime.UtcNow >= x.Exam.ReleaseDate && x.Student.UserId == userId).ToListAsync())
             .Select(x => new StudentExamResultResponse(x.Id, x.CorrectAnswers, x.TotalScore))
-            .FirstOrDefaultAsync(se => se.Id == studentExamId);
+            .FirstOrDefault(se => se.Id == studentExamId);
     }
 }

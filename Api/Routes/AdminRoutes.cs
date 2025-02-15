@@ -29,19 +29,19 @@ public static class AdminRoutes
         return TypedResults.Ok(await authManager.GenerateToken(user));
     }
     
-    public static async Task<Results<Ok<Admin>, UnauthorizedHttpResult>> GetProfile(AdminRepository repository, ClaimsPrincipal principal)
+    public static async Task<Results<Ok<AdminResponse>, UnauthorizedHttpResult>> GetProfile(AdminRepository repository, ClaimsPrincipal principal)
     {
         string userId = principal.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
-        Admin? admin = await repository.Get(userId);
+        AdminResponse? admin = await repository.Get(userId);
         return admin == null ? TypedResults.Unauthorized() : TypedResults.Ok(admin);
     }
     
-    public static async Task<Results<Ok<Admin>, NotFound>> Get(string id, AdminRepository repository)
+    public static async Task<Results<Ok<AdminResponse>, NotFound>> Get(Guid id, AdminRepository repository)
     {
-        Admin? admin = await repository.Get(id);
+        AdminResponse? admin = await repository.Get(id);
         return admin == null ? TypedResults.NotFound() : TypedResults.Ok(admin);
     }
-    public static async Task<Ok<PagedResult<Admin>>> GetAll([AsParameters] PagedRequest request, AdminRepository repository)
+    public static async Task<Ok<PagedResult<AdminResponse>>> GetAll([AsParameters] PagedRequest request, AdminRepository repository)
     {
         return TypedResults.Ok(await repository.GetAll(request));
     }

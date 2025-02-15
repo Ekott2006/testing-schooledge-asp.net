@@ -15,7 +15,7 @@ public sealed class ExamFaker : Faker<Exam>
         RuleFor(c => c.Instructions, f => f.Lorem.Sentences());
         RuleFor(c => c.Instructor, f => f.Name.FullName());
         RuleFor(c => c.StartDateTime, f => f.Date.Between(DateTime.Today - timeRange, DateTime.Today + timeRange));
-        RuleFor(c => c.Duration, f => f.Date.Timespan(TimeSpan.FromHours(4)));
+        RuleFor(c => c.Duration, f => TimeSpan.FromMinutes(random.Next(10, (4 * 60) + 1)));
         RuleFor(c => c.ReleaseDate, f => f.Date.Between(DateTime.Today - timeRange, DateTime.Today + timeRange));
         RuleFor(c => c.MaxAttempts, _ => 1);
         RuleFor(c => c.TotalQuestions, _ => random.Next(5, 10));

@@ -1,5 +1,6 @@
 ﻿using Domain.Data;
 using Domain.Dto;
+using Domain.Dto.Exam;
 using Domain.Dto.Student;
 using Domain.Helpers;
 using Domain.Model;
@@ -20,7 +21,8 @@ public class StudentRepository(DataContext context)
     }
 
     // TODO:Convert to a service 
-    public async Task CreateBulk(List<(string userId, StudentRequest request)> studentRequests, CancellationToken cancellationToken)
+    public async Task CreateBulk(List<(string userId, StudentRequest request)> studentRequests,
+        CancellationToken cancellationToken)
     {
         List<Guid> departmentIds = studentRequests.Select(r => r.request.DepartmentId).Distinct().ToList();
         List<CourseLevel> levels = studentRequests.Select(r => r.request.Level).Distinct().ToList();
@@ -31,7 +33,7 @@ public class StudentRepository(DataContext context)
             .ToListAsync(cancellationToken: cancellationToken);
 
         // Map requests to students, ensuring each userId is unique
-        List<Student> students = studentRequests.Select(sr => 
+        List<Student> students = studentRequests.Select(sr =>
             sr.request.ToStudent(sr.userId, courses
                 .Where(c => c.DepartmentId == sr.request.DepartmentId && c.Level == sr.request.Level)
                 .ToList())
@@ -43,14 +45,15 @@ public class StudentRepository(DataContext context)
     }
 
 
-    public async Task<Student?> Get(string userId)
+    public async Task<StudentResponse?> Get(string userId)
     {
-        return await context.Students.Include(x => x.User).FirstOrDefaultAsync(x => x.UserId == userId);
+        Student? student = await context.Students.Include(x => x.User).FirstOrDefaultAsync(x => x.UserId == userId);
+        return new StudentResponse(student);
     }
 
-    public async Task<PagedResult<Student>> GetAll(GetStudentRequest request)
+    public async Task<PagedResult<StudentResponse>> GetAll(GetStudentRequest request)
     {
-        IQueryable<Student> query = context.Students.AsQueryable();
+        IQueryable<Student> query = context.Students.Select(x => x).AsQueryable();
         if (!string.IsNullOrEmpty(request.Search))
             query = query.Where(e => (e.User.UserName ?? string.Empty).Contains(request.Search));
         if (request.FacultyId.HasValue)
@@ -60,7 +63,7 @@ public class StudentRepository(DataContext context)
         if (request.Level != null)
             query = query.Where(e => e.Level == request.Level);
 
-        return await query.ToPagedListAsync(request.PageNumber, request.PageSize);
+        return await query.Select(x => new StudentResponse(x)).ToPagedListAsync(request.PageNumber, request.PageSize);
     }
 
     public async Task Update(string userId, UpdateStudentRequest request)
@@ -76,21 +79,21 @@ public class StudentRepository(DataContext context)
         await context.Students.Where(x => x.UserId == userId).ExecuteDeleteAsync();
     }
 
-    private IQueryable<Exam> GetExamsQuery(string userId)
+    private IQueryable<ExamResponse> GetExamsQuery(string userId)
     {
         return context.Students
             .Where(s => s.UserId == userId)
             .SelectMany(s => s.Courses.SelectMany(c => c.Exams))
-            .Where(e => e.StartDateTime > DateTime.UtcNow);
+            .Where(e => e.StartDateTime > DateTime.UtcNow).Select(x => new ExamResponse(x));
     }
 
-    public async Task<List<Exam>> GetUpcomingExams(string userId)
+    public async Task<List<ExamResponse>> GetUpcomingExams(string userId)
     {
         return await GetExamsQuery(userId).OrderBy(e => e.StartDateTime)
             .ToListAsync();
     }
 
-    public async Task<List<Exam>> GetAvailableExams(string userId)
+    public async Task<List<ExamResponse>> GetAvailableExams(string userId)
     {
         DateTime now = DateTime.UtcNow;
         return await GetExamsQuery(userId).Where(e => e.StartDateTime <= now && e.ReleaseDate >= now)

@@ -7,14 +7,15 @@ namespace Domain.Repository;
 
 public class CourseRepository(DataContext context)
 {
-    public async Task<List<Course>> Get(bool? isDeleted = false)
+    public async Task<List<CourseResponse>> Get(bool? isDeleted = false)
     {
-        return isDeleted switch
+        List<Course> results =  isDeleted switch
         {
             true => await context.Courses.IgnoreQueryFilters().Where(x => x.IsDeleted).ToListAsync(),
             false => await context.Courses.ToListAsync(),
             _ => await context.Courses.IgnoreQueryFilters().ToListAsync()
         };
+        return results.Select(x => new CourseResponse(x)).ToList();
     }
 
     public async Task<bool> Restore(Guid id)

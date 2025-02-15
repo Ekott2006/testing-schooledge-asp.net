@@ -17,6 +17,7 @@ public static class SeedDatabaseMiddleware
         DataContext context = scope.ServiceProvider.GetRequiredService<DataContext>();
         UserManager<User> userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
         context.Database.EnsureCreated();
+        if (context.Faculties.Any()) return;
         SeedDatabase(context, userManager).Wait();
         if (!context.Institutions.Any() && !context.Faculties.Any()) throw new Exception("Unable to Seed Database");
     }
@@ -104,7 +105,7 @@ public static class SeedDatabaseMiddleware
 
 
         ImmutableList<StudentExam> studentExams = students
-            .Select(student => exams.Select(exam => new StudentExamFaker(faker, student.Id, exam).Generate(5)))
+            .Select(student => exams.Take(10).Select(exam => new StudentExamFaker(faker, student.Id, exam).Generate(5)))
             .SelectMany(x => x).SelectMany(x => x).ToImmutableList();
         await context.StudentExams.AddRangeAsync(studentExams);
         WriteLine("Student Exams Count: {0}", studentExams.Count);
@@ -120,6 +121,8 @@ public static class SeedDatabaseMiddleware
             .ToImmutableList();
         await context.StudentAnswers.AddRangeAsync(studentAnswers);
         WriteLine("Student Answers Count: {0}", studentAnswers.Count);
+
+        studentExams.Where(s => s.Status == StudentExamStatus.Completed).Select(AutoGrading).ToImmutableList();
         await context.SaveChangesAsync();
     }
 
@@ -146,5 +149,24 @@ public static class SeedDatabaseMiddleware
         // Get a random wrong answer from the choices
         List<string> wrongChoices = choices.Where(choice => choice != correctAnswer).ToList();
         return wrongChoices[random.Next(wrongChoices.Count)];
+    }
+
+    private static StudentExam AutoGrading(StudentExam studentExam)
+    {
+        int totalScore = 0;
+        int correct = 0;
+
+        foreach (StudentAnswer _ in studentExam.StudentAnswers.Where(answer =>
+                     answer.Answer.Trim().Equals(answer.Question.CorrectAnswer.Trim(),
+                         StringComparison.OrdinalIgnoreCase)))
+        {
+            correct++;
+            totalScore += 1; // Assume each question is 1 mark
+        }
+
+        studentExam.TotalScore = totalScore;
+        studentExam.CorrectAnswers = correct;
+        studentExam.Status = StudentExamStatus.Completed;
+        return studentExam;
     }
 }

@@ -7,7 +7,7 @@ namespace Api.Routes;
 
 public static class CourseRoutes
 {
-    public static async Task<Ok<List<Course>>> Get(CourseRepository repository)
+    public static async Task<Ok<List<CourseResponse>>> Get(CourseRepository repository)
     {
         return TypedResults.Ok(await repository.Get());
     }

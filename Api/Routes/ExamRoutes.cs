@@ -10,13 +10,13 @@ namespace Api.Routes;
 public static class ExamRoutes
 {
     
-    public static async Task<Results<Ok<Exam>, NotFound>> Get(Guid id, ExamRepository repository)
+    public static async Task<Results<Ok<ExamResponse>, NotFound>> Get(Guid id, ExamRepository repository)
     {
-        Exam? exam = await repository.Get(id);
+        ExamResponse? exam = await repository.Get(id);
         return exam == null ? TypedResults.NotFound() : TypedResults.Ok(exam);
     }
 
-    public static async Task<Ok<PagedResult<Exam>>> GetAll([AsParameters] GetExamRequest request,
+    public static async Task<Ok<PagedResult<ExamResponse>>> GetAll([AsParameters] GetExamRequest request,
         ExamRepository repository)
     {
         return TypedResults.Ok(await repository.Get(request));

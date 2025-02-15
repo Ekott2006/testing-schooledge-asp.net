@@ -57,6 +57,7 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options => options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 builder.Services.AddAntiforgery();
 
 WebApplication app = builder.Build();
@@ -67,6 +68,11 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
     app.MapOpenApi();
     app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "OpenAPI V1"));
+    app.UseReDoc(c =>
+    {
+        c.DocumentTitle = "REDOC API Documentation";
+        c.SpecUrl = "/openapi/v1.json";
+    });   
 
     // TODO: Remove this and use migrations
     app.Services.UseSeedDatabaseMiddleware();
@@ -78,12 +84,6 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapGet("/", () => new { Message = "Hello World" });
-app.MapGet("/start", (StudentFileProcessor backgroundTask) =>
-{
-    string taskId = Guid.NewGuid().ToString();
-    backgroundTask.QueueFile(taskId);
-    return TypedResults.Ok(new { taskId, message = "Task started, subscribe for progress updates." });
-});
 
 RouteGroupBuilder accountGroup = app.MapGroup("account");
 accountGroup.MapPost("student/login", StudentRoutes.Login);
@@ -144,7 +144,7 @@ studentExamGroup.MapPatch("/submit/answer", StudentExamRoutes.SubmitAnswer);
 
 RouteGroupBuilder adminGroup = app.MapGroup("admins");
 adminGroup.MapGet("/", AdminRoutes.GetAll);
-adminGroup.MapGet("/{id}", AdminRoutes.Get);
+adminGroup.MapGet("/{id:guid}", AdminRoutes.Get);
 adminGroup.MapPost("/", AdminRoutes.Create);
 adminGroup.MapPut("/{id:guid}", AdminRoutes.Update);
 adminGroup.MapDelete("/{id:guid}", AdminRoutes.Delete);

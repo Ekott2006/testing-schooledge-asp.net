@@ -17,13 +17,19 @@ public class AdminRepository(DataContext context)
         await context.SaveChangesAsync();
     }
 
-    public async Task<Admin?> Get(string userId)
+    public async Task<AdminResponse?> Get(string userId)
     {
-        return await context.Admins.Include(x => x.User).FirstOrDefaultAsync(x => x.UserId == userId);
+        Admin? admin = await context.Admins.Include(x => x.User).FirstOrDefaultAsync(x => x.UserId == userId);
+        return new AdminResponse(admin);
     }
-    public async Task<PagedResult<Admin>> GetAll(PagedRequest request)
+    public async Task<AdminResponse?> Get(Guid id)
     {
-        IQueryable<Admin> query = context.Admins.AsQueryable().Include(x => x.User);
+        Admin? admin = await context.Admins.Include(x => x.User).FirstOrDefaultAsync(x => x.Id == id);
+        return new AdminResponse(admin);
+    }
+    public async Task<PagedResult<AdminResponse>> GetAll(PagedRequest request)
+    {
+        IQueryable<AdminResponse> query = context.Admins.AsQueryable().Include(x => x.User).Select(x => new AdminResponse(x));
         return await query.ToPagedListAsync(request.PageNumber, request.PageSize);
     }
 

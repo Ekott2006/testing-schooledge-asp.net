@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using Api.BackgroundTask;
 using Api.Helpers;
+using Domain.Dto;
+using Domain.Dto.Exam;
 using Domain.Dto.Student;
 using Domain.Dto.User;
 using Domain.Model;
@@ -30,7 +32,7 @@ public static class StudentRoutes
         return TypedResults.NoContent();
     }
 
-    public static async Task<IResult> Login(LoginRequest request, AuthManager authManager)
+    public static async Task<Results<ProblemHttpResult, Ok<AuthResponse>>> Login(LoginRequest request, AuthManager authManager)
     {
         (User? user, string? signInState) = await authManager.Login(request);
         if (signInState != null || user == null)
@@ -38,47 +40,47 @@ public static class StudentRoutes
         return TypedResults.Ok(await authManager.GenerateToken(user));
     }
 
-    public static async Task<IResult> GetProfile(StudentRepository repository, ClaimsPrincipal principal)
+    public static async Task<Results<Ok<StudentResponse>, NotFound>> GetProfile(StudentRepository repository, ClaimsPrincipal principal)
     {
         string userId = principal.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
-        Student? student = await repository.Get(userId);
-        return TypedResults.Ok(student);
+        StudentResponse? student = await repository.Get(userId);
+        return student == null ? TypedResults.NotFound() : TypedResults.Ok(student);
     }
 
-    public static async Task<IResult> Get(string id, StudentRepository repository)
+    public static async Task<Ok<StudentResponse>> Get(string id, StudentRepository repository)
     {
         return TypedResults.Ok(await repository.Get(id));
     }
 
-    public static async Task<IResult> GetAll([AsParameters] GetStudentRequest request, [FromServices] StudentRepository repository)
+    public static async Task<Ok<PagedResult<StudentResponse>>> GetAll([AsParameters] GetStudentRequest request, [FromServices] StudentRepository repository)
     {
         return TypedResults.Ok(await repository.GetAll(request));
     }
     
     // TODO: Make it One Route
-    public static async Task<Ok<List<Exam>>> GetAvailableExams(StudentRepository repository, ClaimsPrincipal principal)
+    public static async Task<Ok<List<ExamResponse>>> GetAvailableExams(StudentRepository repository, ClaimsPrincipal principal)
     {
         string userId = principal.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
         return TypedResults.Ok(await repository.GetAvailableExams(userId));
     }
 
-    public static async Task<Ok<List<Exam>>> GetUpcomingExams(StudentRepository repository, ClaimsPrincipal principal)
+    public static async Task<Ok<List<ExamResponse>>> GetUpcomingExams(StudentRepository repository, ClaimsPrincipal principal)
     {
         string userId = principal.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
         return TypedResults.Ok(await repository.GetUpcomingExams(userId));
     }
 
-    public static async Task<IResult> Update(string id, UpdateStudentRequest request, UserRepository userRepository, StudentRepository repository)
+    public static async Task<NoContent> Update(string id, UpdateStudentRequest request, UserRepository userRepository, StudentRepository repository)
     {
         await repository.Update(id, request);
         await userRepository.Update(id, request);
         return TypedResults.NoContent();
     }
 
-    public static async Task<IResult> Delete(string id, StudentRepository repository, AuthManager authManager)
+    public static async Task<NoContent> Delete(string id, StudentRepository repository, AuthManager authManager)
     {
-        await repository.Delete(id);
         await authManager.DeleteAccount(id);
+        await repository.Delete(id);
         return TypedResults.NoContent();
     }
 }

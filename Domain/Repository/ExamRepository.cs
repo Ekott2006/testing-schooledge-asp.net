@@ -9,7 +9,7 @@ namespace Domain.Repository;
 
 public class ExamRepository(DataContext context)
 {
-    public async Task<PagedResult<Exam>> Get(GetExamRequest request)
+    public async Task<PagedResult<ExamResponse>> Get(GetExamRequest request)
     {
         IQueryable<Exam> query = context.Exams.AsQueryable();
         if (request.Status != null)
@@ -23,16 +23,16 @@ public class ExamRepository(DataContext context)
         if (request.Level != null)
             query = query.Where(e => e.Course.Level == request.Level);
 
-        return await query.ToPagedListAsync(request.PageNumber, request.PageSize);
+        return await query.Select(x => new ExamResponse(x)).ToPagedListAsync(request.PageNumber, request.PageSize);
     }
 
-    public async Task<Exam?> Get(Guid id)
+    public async Task<ExamResponse?> Get(Guid id)
     {
         Exam? exam = await context.Exams
             .Include(exam => exam.Course)
             .Include(x => x.Questions)
             .FirstOrDefaultAsync(x => x.Id == id);
-        return exam;
+        return new ExamResponse(exam);
     }
 
     public async Task<bool> Create(string userId, ExamRequest request)
